@@ -5,3 +5,5 @@ Inspired by Dylan Moriarty's [Foggy Spaces](https://dylanmoriarty.github.io/blog
 Additionally, this map demonstrates how to create a dynamic masking effect on Mapbox maps.
 
 [LINK](https://willymaps.github.io/cloudpath/map.html)
+
+![Cloud Image](../img/clouds.png)
