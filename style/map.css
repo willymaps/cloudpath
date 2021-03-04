@@ -1,0 +1,103 @@
+#mapWrap {
+    position: relative;
+    height: 100vh;
+    width: 100vw;
+}
+
+#map {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 100%;
+}
+
+#addInfoBox {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 1000;
+    display: none;
+}
+
+#dropdownWrap .text {
+    font-size:25px;
+}
+
+#mapLoader {
+    display: none;
+    z-index: 1000;
+}
+
+.ui.inverted.dimmer {
+    background-color: rgba(255,255,255,.6);
+}
+
+#infoBox {
+    position: relative;
+    z-index:1001;
+    box-sizing: border-box;
+    background:#fff;
+    color:#999;
+    top:50px;
+    left:50px;
+    /*height: 300px;*/
+    width:300px;
+    font-size:16px;
+    -webkit-box-shadow: 5px 5px 10px 0px rgba(239,239,239,0.3);
+    -moz-box-shadow: 5px 5px 10px 0px rgba(239,239,239,0.3);
+    box-shadow: 5px 5px 10px 0px rgba(239,239,239,0.3);
+}
+
+#infoBox #closeBtn {
+    position: absolute;
+    top:10px;
+    right:10px;
+}
+
+#infoBox #closeBtn:hover {
+    cursor: pointer;
+}
+
+#infoBox h2 {
+    margin-top:0;
+    max-width:220px;
+    color:#333;
+}
+
+#infoBox .dropdown {
+    font-weight:bold;
+    color:#555;
+}
+
+#infoBox .ui.buttons {
+    width: 100%;
+}
+
+#infoBox .note {
+    margin-top:20px;
+    margin-bottom: 5px;
+    font-size:12px;
+}
+
+#infoBox .note a{
+    color:#999;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+#contentBox {
+    padding:20px;
+}
+
+@media (max-width:650px) {
+  .leaflet-right {
+    display: none;
+  }
+  #infoBox {
+    top: 30px;
+    left: 0;
+    margin: auto;
+    width: 90%;
+    right: 0;
+  }
+}

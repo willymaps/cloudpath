@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Clouds</title>
+<meta name="viewport" content="initial-scale=1.0">
+<meta charset="utf-8">
+<script src='https://npmcdn.com/@turf/turf/turf.min.js'></script>
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.0.1/mapbox-gl.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.0.1/mapbox-gl.css" rel="stylesheet" />
+<script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.2.0/mapbox-gl-draw.js'></script>
+<link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.2.0/mapbox-gl-draw.css' type='text/css' />
+<link rel="stylesheet" type="text/css" href="./style/map.css">
+</head>
+<style>
+
+body {
+  margin:0;
+  padding:0;
+  font-family: sans-serif;
+}
+
+</style>
+<body>
+<div id="mapWrap">
+	<div id="map"></div>
+</div>
+
+<script>
+
+let initLoad = true;
+
+mapboxgl.accessToken = 'pk.eyJ1Ijoid2lsbGlhbS1kYXZpcyIsImEiOiJja2prYmpvMncwM21pMnJtbjg0NnBjbWduIn0.9n0cpRnRO06AI7oydrZjbw';
+var map = new mapboxgl.Map({
+    container: 'map', // container id
+    style: 'mapbox://styles/mapbox/satellite-streets-v11', // style URL
+    center: [-73.9660, 40.7822], // starting position [lng, lat]
+    bearing: -61,
+    minZoom: 14,
+    maxZoom:14.8,
+    zoom: 14.3 // starting zoom
+});
+
+const draw = new MapboxDraw({
+  displayControlsDefault: false,
+  controls: {
+    line_string: true,
+    trash: true
+  }
+});
+
+function updateClouds(coords) {
+
+  let line = turf.lineString(coords);
+  let distance = 200;
+  let buffer = generateBuffer(line, distance);
+  let poly = generatePoly();
+  let diff = turf.difference(poly, buffer);
+  let buffLine = turf.polygonToLine(buffer);
+  let lineDistance = turf.lineDistance(buffLine);
+  let rects = 0;
+  let rectArray = [];
+
+  for (i=0;i<3;i++) {
+
+    let rectCollection = turf.featureCollection([]);
+    let rectNum = getRandom(15,25);
+    rects = lineDistance*rectNum;
+
+    let segments = lineDistance / rects;
+    let units = 'meters';
+
+      for(let i = 0; i <= rects; i++) {
+        let pointOnLine = turf.along(buffLine, (segments * i));
+        rectCollection.features.push(pointOnLine);
+      }
+    rectArray.push(rectCollection);
+    randomClouds(rectCollection);
+
+    if (rectArray.length === 3) {
+      cutClouds(rectArray[0], rectArray[1], rectArray[2], diff);
+    }
+  }
+}
+
+map.on('load', function () {
+  let drawCoords;
+
+  map.addControl(draw, 'top-left');
+
+  map.on('draw.create', function (e) {
+    drawCoords = e.features[0].geometry.coordinates;
+    updateClouds(drawCoords);
+  });
+
+  map.on('draw.update', function (e) {
+    drawCoords = e.features[0].geometry.coordinates;
+    updateClouds(drawCoords);
+  });
+
+  map.on('draw.delete', function (e) {
+    drawCoords = false;
+    map.setLayoutProperty('circle-outline-one', 'visibility', 'none');
+    map.setLayoutProperty('circle-outline-two', 'visibility', 'none');
+    map.setLayoutProperty('circle-outline-three', 'visibility', 'none');
+    map.setLayoutProperty('poly-fill', 'visibility', 'none');
+  });
+
+  map.on('move', function() {
+    if (drawCoords) {
+      updateClouds(drawCoords);
+    }
+  });
+
+});
+
+function randomClouds(explode) {
+    turf.featureEach(explode, function (currentFeature, featureIndex) {
+      let randomNum = getRandom(10,35);
+      currentFeature.properties = {size: randomNum};
+    });
+}
+
+function getRandom(min, max) {
+    let maximum = max;
+    let minimum = min;
+    let randomNum = Math.floor(Math.random() * (maximum - minimum + 1)) + minimum;
+    return randomNum;
+}
+
+function cutClouds(featureOne, featureTwo, featureThree, poly) {
+  if (initLoad) {
+      addLayer(featureOne, featureTwo, featureThree, poly);
+  } else {
+      updateLayer(featureOne, featureTwo, featureThree, poly);
+  }
+}
+
+function generatePoly() {
+  let bounds = map.getBounds();
+  let bbox = [bounds._sw.lng, bounds._sw.lat, bounds._ne.lng, bounds._ne.lat];
+  let poly = turf.bboxPolygon(bbox);
+  return poly;
+}
+
+function generateBuffer(line, time) {
+    let radius = time;
+    let dissolve;
+    let options = {steps: 10, units: 'meters', properties: {}};
+    let buffer = turf.buffer(line, radius, options);
+    return buffer;
+}
+
+function addLayer(featureOne, featureTwo, featureThree, poly) {
+  
+  initLoad = false;
+
+  let circlePaint = {
+      'circle-radius': ['get', 'size'],
+      'circle-color': '#efefef',
+      'circle-opacity': 0.7,
+      'circle-blur': 0.5
+    }
+
+	map.addSource('circle-source-one', {
+		'type': 'geojson',
+		'data': featureOne
+  });
+
+  map.addSource('circle-source-two', {
+		'type': 'geojson',
+		'data': featureTwo
+  });
+
+  map.addSource('circle-source-three', {
+		'type': 'geojson',
+		'data': featureThree
+  });
+
+  map.addSource('poly-source', {
+		'type': 'geojson',
+		'data': poly
+  });
+  
+  map.addLayer({
+    'id': 'poly-fill',
+    'type': 'fill',
+    'source': 'poly-source',
+    'layout': {},
+    'paint': {
+      'fill-color': '#efefef',
+      'fill-opacity': 0.99
+    }
+  });
+
+  map.addLayer({
+		'id': 'circle-outline-one',
+		'type': 'circle',
+		'source': 'circle-source-one',
+		'paint': circlePaint
+  });
+
+  map.addLayer({
+		'id': 'circle-outline-two',
+		'type': 'circle',
+		'source': 'circle-source-two',
+		'paint': circlePaint
+  });
+
+  map.addLayer({
+		'id': 'circle-outline-three',
+		'type': 'circle',
+		'source': 'circle-source-three',
+		'paint': circlePaint
+  });
+};
+
+function updateLayer(featureOne, featureTwo, featureThree, poly) {
+  map.setLayoutProperty('circle-outline-one', 'visibility', 'visible');
+  map.setLayoutProperty('circle-outline-two', 'visibility', 'visible');
+  map.setLayoutProperty('circle-outline-three', 'visibility', 'visible');
+  map.setLayoutProperty('poly-fill', 'visibility', 'visible');
+  map.getSource('circle-source-one').setData(featureOne);
+  map.getSource('circle-source-two').setData(featureTwo);
+  map.getSource('circle-source-three').setData(featureThree);
+  map.getSource('poly-source').setData(poly);
+};
+
+</script>
+</body>
+</html>
