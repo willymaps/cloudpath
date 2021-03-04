@@ -6,4 +6,4 @@ Additionally, this map demonstrates how to create a dynamic masking effect on Ma
 
 [LINK](https://willymaps.github.io/cloudpath/map.html)
 
-![Cloud Image](../img/clouds.png)
+![Cloud Image](./img/clouds.png)
